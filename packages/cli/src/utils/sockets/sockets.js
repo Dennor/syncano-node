@@ -329,11 +329,10 @@ class Socket {
     debug(`Getting Socket: ${socketName}`)
     const socket = Socket.getLocal(socketName)
     const loadedSocket = await socket.loadRemote()
-    await loadedSocket.getDepsRegistrySockets()
-
     if (!socket.existLocally) {
       await socket.loadFromRegistry()
     }
+    await loadedSocket.getDepsRegistrySockets()
     return socket
   }
 
@@ -564,7 +563,7 @@ class Socket {
 
   getSocketNodeModulesChecksum () {
     debug('getSocketNodeModulesChecksum')
-    return hashdirectory.sync(path.join(this.socketPath, '.dist', 'node_modules'))
+    return hashdirectory.sync(path.join(this.getSocketPath(), '.dist', 'node_modules'))
   }
 
   getSocketConfigFile () {
@@ -1018,12 +1017,19 @@ class Socket {
         await Registry.getSocket(this)
         const fileName = path.join(session.getBuildPath(), `${this.name}.zip`)
 
-        await new Promise((resolve, reject) => {
+        await new Promise(async (resolve, reject) => {
           fs.createReadStream(fileName)
             .pipe(unzip.Extract({ path: this.getSocketPath() }))
-            .on('close', () => {
+            .on('close', async () => {
               debug('Unzip finished')
-              resolve()
+
+              // Build registry socket.
+              try {
+                await this.build()
+              } catch(e) {
+                return reject(e)
+              }
+              return resolve()
             })
         })
       }
