@@ -1017,7 +1017,7 @@ class Socket {
         await Registry.getSocket(this)
         const fileName = path.join(session.getBuildPath(), `${this.name}.zip`)
 
-        await new Promise(async (resolve, reject) => {
+        await new Promise((resolve, reject) => {
           fs.createReadStream(fileName)
             .pipe(unzip.Extract({ path: this.getSocketPath() }))
             .on('close', async () => {
